@@ -1,7 +1,11 @@
+import os
 import alpaca_trade_api
+from dotenv import load_dotenv
+
+load_dotenv()
 
 API_KEY = "PK0DPZ9ECWPW8L8XDQ30"
-SECRET_API_KEY = "B0GoMsQVFvkFb9Lg5vTmGuhCOO0TQhO4MYOPee1m"
+SECRET_API_KEY = os.getenv("SECRET_API_KEY")
 BASE_URL = "https://paper-api.alpaca.markets"
 
 # Initialize the Alpaca API client
