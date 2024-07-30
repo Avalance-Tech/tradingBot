@@ -24,3 +24,17 @@ class DbManager:
         """
         with open(self.db_path, "w") as file:
             json.dump(data, file)
+
+    def store_trade(self, trade: dict) -> None:
+        """stores a trade in the database
+
+        Args:
+            trade (dict): the trade to store
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        data["trades"].append(trade)
+
+        with open(self.db_path, "w") as file:
+            json.dump(data, file)
