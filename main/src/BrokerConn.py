@@ -13,13 +13,32 @@ BASE_URL = "https://paper-api.alpaca.markets"
 
 class BrokerConn:
     def __init__(self, API_KEY, SECRET_KEY, BASE_URL = "https://paper-api.alpaca.markets"):
+        """
+        Initialize the BrokerConn instance with Alpaca API credentials and base URL.
+
+        :param API_KEY: The API key for Alpaca.
+        :param SECRET_KEY: The secret API key for Alpaca.
+        :param BASE_URL: The base URL for Alpaca API (default is for paper trading).
+        """
         self.API_KEY = API_KEY
         self.SECRET_KEY = SECRET_KEY
         self.BASE_URL = BASE_URL
-        # Initialize the Alpaca API client
         self.api = alpaca_trade_api.REST(API_KEY, SECRET_KEY, BASE_URL, api_version="v2")
 
     def create_trade(self, Stock: str, Amount: float) -> dict:
+        """
+        Create a trade to buy a specified amount of stock.
+
+        :param Stock: The stock symbol to buy.
+        :param Amount: The amount (number of shares) of the stock to buy.
+        :raises ValueError: If the stock symbol is not found.
+        :raises InsuffecientFunds: If the balance is less than the estimated cost of the trade.
+        :return: A dictionary containing trade details:
+                 - "Amount": Amount of the stock purchased.
+                 - "Price": Price of the stock at the time of purchase.
+                 - "Time": Time when the trade was completed (UTC).
+                 - "Type": The type of trade (buy).
+        """
         estimatedCost = self.api.get_latest_trade(Stock).price * Amount
         if estimatedCost > self.get_balance():
             raise InsuffecientFunds(self.get_balance(), estimatedCost)
@@ -51,6 +70,18 @@ class BrokerConn:
     
 
     def leave_trade(self, Stock: str, Amount: float) -> dict:
+        """
+        Sell a specified amount of stock from the portfolio.
+
+        :param Stock: The stock symbol to sell.
+        :param Amount: The amount (number of shares) of the stock to sell.
+        :raises ValueError: If the stock is not found in the portfolio or if there are not enough shares to sell.
+        :return: A dictionary containing trade details:
+                 - "Cash": Amount of money received from the sale.
+                 - "Price": Price of the stock at the time of sale.
+                 - "Time": Time when the trade was completed (UTC).
+                 - "Type": The type of trade (sell).
+        """
         # Check if the stock is in the portfolio
         try:
             position = self.api.get_position(Stock)
@@ -90,6 +121,17 @@ class BrokerConn:
 
 
     def get_info(self, Stock: str, time = None) -> dict:
+        """
+        Get information about a stock at a specific time.
+
+        :param Stock: The stock symbol to retrieve information for.
+        :param time: The time to get the information for. Defaults to current time.
+        :raises ValueError: If no data is available for the stock symbol.
+        :return: A dictionary containing stock information:
+                 - "Price": The closing price of the stock.
+                 - "Volume": The volume of trades.
+                 - "Time": The time of the bar data (UTC).
+        """
         # Default time to current time if not provided
         if time is None:
             time = datetime.utcnow()
