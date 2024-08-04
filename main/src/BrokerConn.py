@@ -37,7 +37,7 @@ class BrokerConn:
                  - "Amount": Amount of the stock purchased.
                  - "Price": Price of the stock at the time of purchase.
                  - "Time": Time when the trade was completed (UTC).
-                 - "Type": The type of trade (buy).
+                 - "Type": failed or successful trade.
         """
         estimatedCost = self.api.get_latest_trade(Stock).price * Amount
         if estimatedCost > self.get_balance():
@@ -54,17 +54,22 @@ class BrokerConn:
         while True:
             filledOrder = self.api.get_order(order.id)
             if filledOrder.status == "filled":
+                tradeData = {
+                    "Amount": Amount,
+                    "Price": float(filledOrder.filled_avg_price),
+                    "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # current UTC time
+                    "Type": "buy"
+                }
                 break
             elif filledOrder.status == "canceled":
-                print("Order cancelled because market is likely closed or couldnt trade the stocks immediately")
-                return
+                tradeData = {
+                    "Amount": Amount,
+                    "Price": float(filledOrder.filled_avg_price),
+                    "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # current UTC time
+                    "Type": "failed_buy"
+                }
+                break
             time.sleep(1)  # Wait for a second before checking again
-        
-        tradeData = {
-            "Amount": Amount,
-            "Price": float(filledOrder.filled_avg_price),
-            "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")  # current UTC time
-        }
 
         return tradeData
     
@@ -80,7 +85,7 @@ class BrokerConn:
                  - "Cash": Amount of money received from the sale.
                  - "Price": Price of the stock at the time of sale.
                  - "Time": Time when the trade was completed (UTC).
-                 - "Type": The type of trade (sell).
+                 - "Type": failed or successful trade.
         """
         # Check if the stock is in the portfolio
         try:
@@ -104,19 +109,23 @@ class BrokerConn:
         while True:
             newOrder = self.api.get_order(order.id)
             if newOrder.status == "filled":
+                tradeData = {
+                    "Cash": float(newOrder.filled_avg_price) * Amount,
+                    "Price": float(newOrder.filled_avg_price),
+                    "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # Use the current UTC time
+                    "Type": "sell"
+                }
                 break
             elif newOrder.status == "canceled":
-                print("couldnt sell because market is likely closed")
-                return
+                tradeData = {
+                    "Cash": float(newOrder.filled_avg_price) * Amount,
+                    "Price": float(newOrder.filled_avg_price),
+                    "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # Use the current UTC time
+                    "Type": "failed_sell"
+                }
+                break
             time.sleep(1) # Wait for a second before checking again
         
-        # Fetch the trade data
-        tradeData = {
-            "Cash": float(newOrder.filled_avg_price) * Amount,
-            "Price": float(newOrder.filled_avg_price),
-            "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")  # Use the current UTC time
-        }
-
         return tradeData
 
 
@@ -144,7 +153,6 @@ class BrokerConn:
         
         # Fetch bar data for the stock symbol
         barset = self.api.get_bars(Stock, "1min", startTime, endTime)
-        print(barset)
         # Check if symbol exists in the response
         if not barset:
             raise ValueError(f"No data available for stock symbol '{Stock}'")
@@ -161,7 +169,4 @@ class BrokerConn:
 
     def get_balance(self) -> float:
         return float(self.api.get_account().cash)
-
-trader = BrokerConn(API_KEY, SECRET_API_KEY)
-print(trader.leave_trade("NVDA", 2))
 
