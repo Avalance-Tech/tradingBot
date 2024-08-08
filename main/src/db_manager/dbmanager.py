@@ -92,3 +92,18 @@ class DbManager:
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
+
+    def get_sl(self, stock: str) -> dict:
+        """gets the stop loss for a stock
+        Args:
+            stock (str): the stock to get the stop loss for
+
+        Returns:
+            dict: the stop loss for the stock
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        for sl in data["stop_losses"]:
+            if sl["trades"] == stock:
+                return sl
