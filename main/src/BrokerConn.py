@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from alpaca_trade_api.rest import APIError
 load_dotenv()
 
-API_KEY = "PK0DPZ9ECWPW8L8XDQ30"
+API_KEY = "PK2PJM851ZUNUYDFARKS"
 SECRET_API_KEY = os.getenv("SECRET_ALPACA_KEY")
 BASE_URL = "https://paper-api.alpaca.markets"
 
@@ -64,7 +64,7 @@ class BrokerConn:
             elif filledOrder.status == "canceled":
                 tradeData = {
                     "Amount": Amount,
-                    "Price": float(filledOrder.filled_avg_price),
+                    "Price": float(self.api.get_latest_trade(Stock).price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # current UTC time
                     "Type": "failed_buy"
                 }
@@ -118,8 +118,8 @@ class BrokerConn:
                 break
             elif newOrder.status == "canceled":
                 tradeData = {
-                    "Cash": float(newOrder.filled_avg_price) * Amount,
-                    "Price": float(newOrder.filled_avg_price),
+                    "Cash": float(self.api.get_latest_trade(Stock).price) * Amount,
+                    "Price": float(self.api.get_latest_trade(Stock).price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # Use the current UTC time
                     "Type": "failed_sell"
                 }
@@ -142,31 +142,35 @@ class BrokerConn:
                  - "Time": The time of the bar data (UTC).
         """
         # Default time to current time if not provided
-        if time is None:
-            time = datetime.utcnow()
-        else:
+        if time is not None:
             time = datetime.fromisoformat(time.replace("Z", "+00:00"))
+            # Format time to string RFC3391 format
+            startTime = (time - timedelta(minutes = 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            endTime = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+            # Fetch bar data for the stock symbol
+            barset = self.api.get_bars(Stock, "1min", startTime, endTime)
+            # Check if symbol exists in the response
+            if not barset:
+                raise ValueError(f"No data available for stock symbol '{Stock}'")
+            
+            # Get the most recent bar data
+            bar = barset[0]
 
-        # Format time to string RFC3391 format
-        startTime = (time - timedelta(minutes = 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        endTime = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return {
+                "Price": bar.c,          # Close price of the stock
+                "Volume": bar.v,         # Volume of trades
+                "Time": bar.t.strftime("%Y-%m-%dT%H:%M:%SZ") # Time of the bar data
+            }
         
-        # Fetch bar data for the stock symbol
-        barset = self.api.get_bars(Stock, "1min", startTime, endTime)
-        # Check if symbol exists in the response
-        if not barset:
-            raise ValueError(f"No data available for stock symbol '{Stock}'")
-        
-        # Get the most recent bar data
-        bar = barset[0]
-        
-        # Return stock information
         return {
-            "Price": bar.c,          # Close price of the stock
-            "Volume": bar.v,         # Volume of trades
-            "Time": bar.t.strftime("%Y-%m-%dT%H:%M:%SZ") # Time of the bar data
+            "Price": self.api.get_latest_trade(Stock).price,
+            "Volume": self.api.get_latest_trade(Stock).size,
+            "Time": self.api.get_latest_trade(Stock).timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
         }
-
+        
     def get_balance(self) -> float:
         return float(self.api.get_account().cash)
 
+trader = BrokerConn(API_KEY, SECRET_API_KEY)
+print(trader.create_trade("AAPL", 2))
+print(trader.get_info("AAPL"))
