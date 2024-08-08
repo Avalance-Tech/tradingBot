@@ -123,3 +123,14 @@ class DbManager:
         for sl in data["stop_losses"]:
             if sl["stock"] == stock:
                 return sl["percentage"]
+
+    def update_perc_incr(self, stock: str, price):
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        for sl in data["trades"]:
+            if sl["stock"] == stock:
+                sl["price"] = price
+
+        with open(self.db_path, "w") as file:
+            json.dump(data, file)
