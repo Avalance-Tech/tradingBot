@@ -57,3 +57,20 @@ class DbManager:
                 trades.append(trade)
 
         return trades
+
+    def store_sl(self, stock: str, price: float, percentage: int) -> None:
+        """stores a stop loss in the database
+
+        Args:
+            stock (str): the stock to set the stop loss for
+            price (float): the price to set the stop loss at
+            percentage (int): the percentage to set the stop loss at
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        data["stop_losses"].append(
+            {"stock": stock, "price": price, "percentage": percentage})
+
+        with open(self.db_path, "w") as file:
+            json.dump(data, file)
