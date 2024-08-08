@@ -74,3 +74,21 @@ class DbManager:
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
+
+    def remove_sl(self, stock: str, price: float, percentage: int) -> None:
+        """removes a stop loss from the database
+
+        Args:
+            stock (str): the stock to remove the stop loss from
+            price (float): the price to remove the stop loss at
+            percentage (int): the percentage to remove the stop loss at
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        for sl in data["stop_losses"]:
+            if sl["stock"] == stock and sl["price"] == price and sl["percentage"] == percentage:
+                data["stop_losses"].remove(sl)
+
+        with open(self.db_path, "w") as file:
+            json.dump(data, file)
