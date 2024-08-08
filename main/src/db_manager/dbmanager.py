@@ -107,3 +107,19 @@ class DbManager:
         for sl in data["stop_losses"]:
             if sl["trades"] == stock:
                 return sl
+
+    def get_perc_incr(self, stock: str) -> int:
+        """gets the percentage increase for a stock
+
+        Args:
+            stock (str): the stock to get the percentage increase for
+
+        Returns:
+            int: the percentage increase for the stock
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        for sl in data["stop_losses"]:
+            if sl["stock"] == stock:
+                return sl["percentage"]
