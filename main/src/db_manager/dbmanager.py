@@ -38,3 +38,22 @@ class DbManager:
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
+
+    def get_trades(self, user_id: int) -> list:
+        """gets the trades of a user
+
+        Args:
+            user_id (int): the id of the user
+
+        Returns:
+            list: the trades of the user
+        """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        trades = []
+        for trade in data["trades"]:
+            if trade["user_id"] == user_id:
+                trades.append(trade)
+
+        return trades
