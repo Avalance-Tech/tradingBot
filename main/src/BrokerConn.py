@@ -55,6 +55,7 @@ class BrokerConn:
             filledOrder = self.api.get_order(order.id)
             if filledOrder.status == "filled":
                 tradeData = {
+                    "Symbol": Stock,
                     "Amount": Amount,
                     "Price": float(filledOrder.filled_avg_price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # current UTC time
@@ -63,6 +64,7 @@ class BrokerConn:
                 break
             elif filledOrder.status == "canceled":
                 tradeData = {
+                    "Symbol": Stock,
                     "Amount": Amount,
                     "Price": float(self.api.get_latest_trade(Stock).price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # current UTC time
@@ -110,6 +112,7 @@ class BrokerConn:
             newOrder = self.api.get_order(order.id)
             if newOrder.status == "filled":
                 tradeData = {
+                    "Symbol": Stock,
                     "Cash": float(newOrder.filled_avg_price) * Amount,
                     "Price": float(newOrder.filled_avg_price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # Use the current UTC time
@@ -118,6 +121,7 @@ class BrokerConn:
                 break
             elif newOrder.status == "canceled":
                 tradeData = {
+                    "Symbol": Stock,
                     "Cash": float(self.api.get_latest_trade(Stock).price) * Amount,
                     "Price": float(self.api.get_latest_trade(Stock).price),
                     "Time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),  # Use the current UTC time
@@ -157,12 +161,14 @@ class BrokerConn:
             bar = barset[0]
 
             return {
+                "Symbol": Stock,
                 "Price": bar.c,          # Close price of the stock
                 "Volume": bar.v,         # Volume of trades
                 "Time": bar.t.strftime("%Y-%m-%dT%H:%M:%SZ") # Time of the bar data
             }
         
         return {
+            "Symbol": Stock,
             "Price": self.api.get_latest_trade(Stock).price,
             "Volume": self.api.get_latest_trade(Stock).size,
             "Time": self.api.get_latest_trade(Stock).timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
