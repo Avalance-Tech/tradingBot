@@ -119,9 +119,10 @@ class DBManager:
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        for sl in data["stop_losses"]:
-            if sl["trades"] == stock:
-                return sl
+        try:
+            return data[stock]["sell-at"]
+        except KeyError:
+            return dict()
 
     def get_perc_incr(self, stock: str) -> int:
         """gets the percentage increase for a stock
