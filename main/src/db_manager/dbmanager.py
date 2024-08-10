@@ -1,11 +1,9 @@
 """the file that contains the dbmanager class"""
+
 import json
-from Exceptions import InsuffecientFunds
-
-InsuffecientFunds()
 
 
-class DbManager:
+class DBManager:
     """the class that manages the database"""
 
     def __init__(self, db_path: str) -> None:
@@ -16,12 +14,24 @@ class DbManager:
         """
         self.db_path = db_path
 
-    def store_data(self, data: dict) -> None:
-        """initializes the database
+    def store_info(self, info: dict) -> None:
+        """stores info for certain stocks
 
         Args:
-            data (dict): the data to initialize the database with
+            info (dict): the info on the stock
         """
+        with open(self.db_path, "r") as file:
+            data = json.load(file)
+
+        symbol = info["Symbol"]
+        price = info["price"]
+        volume = info["volume"]
+
+        try:
+            data[symbol]["info"] = {"price": price, "volume": volume}
+        except KeyError:
+            data[symbol] = {"info": {"price": price, "volume": volume}}
+
         with open(self.db_path, "w") as file:
             json.dump(data, file)
 
@@ -34,29 +44,36 @@ class DbManager:
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        data["trades"].append(trade)
+        symbol = trade["Symbol"]
+        amount = trade["Amount"]
+        price = trade["Price"]
+        trade_time = trade["Time"]
+        trade_type = trade["Type"]
+        trade_data = {"price": price, "amount": amount, "type": trade_type}
+        try:
+            data[symbol]["trades"][trade_time] = trade_data
+        except KeyError:
+            data[symbol]["trades"] = {trade_time: trade_data}
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
 
-    def get_trades(self, user_id: int) -> list:
+    def get_trades(self, stock: str) -> dict:
         """gets the trades of a user
 
         Args:
-            user_id (int): the id of the user
+            stock (str): the stock symbol
 
         Returns:
-            list: the trades of the user
+            dict: the trades of the user for that stock
         """
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        trades = []
-        for trade in data["trades"]:
-            if trade["user_id"] == user_id:
-                trades.append(trade)
-
-        return trades
+        try:
+            return data[stock]["trades"]
+        except KeyError:
+            return dict()
 
     def store_sl(self, stock: str, price: float, percentage: int) -> None:
         """stores a stop loss in the database
@@ -69,26 +86,24 @@ class DbManager:
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        data["stop_losses"].append(
-            {"stock": stock, "price": price, "percentage": percentage})
+        try:
+            data[stock]["sell-at"][str(price)] = percentage
+        except KeyError:
+            data[stock]["sell-at"] = {str(price): percentage}
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
 
-    def remove_sl(self, stock: str, price: float, percentage: int) -> None:
+    def remove_sl(self, stock: str, price: float) -> None:
         """removes a stop loss from the database
-
         Args:
             stock (str): the stock to remove the stop loss from
             price (float): the price to remove the stop loss at
-            percentage (int): the percentage to remove the stop loss at
         """
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        for sl in data["stop_losses"]:
-            if sl["stock"] == stock and sl["price"] == price and sl["percentage"] == percentage:
-                data["stop_losses"].remove(sl)
+        del data[stock]["sell-at"][str(price)]
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
@@ -134,3 +149,16 @@ class DbManager:
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
+
+
+x = DBManager("data.json")
+data = {
+    "Symbol": "NVDI",
+    "Volume": 12,
+    "Price": 119,
+    "Time": "2021-01-02 20:00",
+    "Amount": 12,
+    "Type": "buy",
+}
+
+x.remove_sl("NVDI", 120)
