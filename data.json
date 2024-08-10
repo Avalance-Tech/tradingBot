@@ -55,7 +55,10 @@
     "NVDI": {
         "info": {
             "price": 119,
-            "volume": 12
+            "volume": 12,
+            "perc increase": {
+                "7D": 50
+            }
         },
         "trades": {
             "2021-01-02 20:00": {

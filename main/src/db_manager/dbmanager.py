@@ -124,42 +124,35 @@ class DBManager:
         except KeyError:
             return dict()
 
-    def get_perc_incr(self, stock: str) -> int:
-        """gets the percentage increase for a stock
+    def get_perc_incr(self, stock: str, timeFrame: str) -> float:
+        """gets percentage increase of stock
 
         Args:
-            stock (str): the stock to get the percentage increase for
+            stock (str): the stock symbol
+            timeFrame (str): time frame as : 24H, 7D, 30D
 
         Returns:
-            int: the percentage increase for the stock
+            float : returns the percenatge increase of stock
         """
         with open(self.db_path, "r") as file:
             data = json.load(file)
 
-        for sl in data["stop_losses"]:
-            if sl["stock"] == stock:
-                return sl["percentage"]
+        return data[stock]["info"]["perc increase"][timeFrame]
 
-    def update_perc_incr(self, stock: str, price):
+    def update_perc_incr(self, stock: str, percenatge: float, timeFrame: str) -> None:
+        """updates percentage increase
+
+        Args:
+            stock (str): stock symbol
+            percenatge (float): updated percentage
+            timeFrame (str): time frame as : 24H, 7D, 30D
+        """
         with open(self.db_path, "r") as file:
             data = json.load(file)
-
-        for sl in data["trades"]:
-            if sl["stock"] == stock:
-                sl["price"] = price
+        try:
+            data[stock]["info"]["perc increase"][timeFrame] = percenatge
+        except KeyError:
+            data[stock]["info"]["perc increase"] = {timeFrame: percenatge}
 
         with open(self.db_path, "w") as file:
             json.dump(data, file)
-
-
-x = DBManager("data.json")
-data = {
-    "Symbol": "NVDI",
-    "Volume": 12,
-    "Price": 119,
-    "Time": "2021-01-02 20:00",
-    "Amount": 12,
-    "Type": "buy",
-}
-
-x.remove_sl("NVDI", 120)
